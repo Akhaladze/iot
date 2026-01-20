@@ -1,7 +1,7 @@
 import os
 import time
 import multiprocessing
-from homebot.app import app
+from homebot import app
 from homebot.tasks import (
     collect_mikrotik_leases,
     collect_shelly_metrics,
