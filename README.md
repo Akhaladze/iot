@@ -1,4 +1,3 @@
-
 ## High level diagram (data source segmentation)
 
 ### - network infrastructure with entry level information (i.e. internet connection, ip addresse, device name, etc)
@@ -179,6 +178,100 @@ graph TD
     Gen --> Inverter
     Inverter -.->|Power Supply| ShellyPro4
     Inverter -.->|Power Supply| ShellyPro2
+```
 
+## Data Processing & Analytics Pipeline
 
+We employ a hybrid data collection strategy to handle the diverse nature of our IoT and network devices, ensuring both historical depth and real-time responsiveness.
 
+### 1. Data Collection Strategy
+
+The system distinguishes between data that needs to be actively polled and real-time events pushed by devices.
+
+*   **Periodic Polling (Pull):** Used for stateful information and devices without push capabilities.
+    *   *Example:* Polling Mikrotik for active DHCP leases to maintain a device inventory.
+*   **Event-Driven (Push):** Used for real-time telemetry and alerts.
+    *   *Example:* MQTT messages from Shelly sensors (power, temperature) or HikVision camera motion alerts.
+
+### 2. Service Integration
+
+We are building specialized services for data ingestion and enrichment:
+
+*   **`services/mikrotik`:** (Active) Connects to the Mikrotik REST API to fetch DHCP leases. This data is used to resolve device MAC addresses to hostnames and IP addresses, acting as the foundation for our **Device Inventory**.
+*   **Future Services:**
+    *   **`hik-vision`:** For retrieving camera status and snapshots.
+    *   **`weather`:** External weather API integration for correlation with internal sensors.
+    *   **`geoip`:** For analyzing external traffic sources.
+    *   **`cloud-screenshot-analysis`:** Triggered by motion events; uploads camera snapshots to a cloud AI service for object detection/classification.
+
+### 3. Analytics Workflow
+
+Our data pipeline transforms raw signals into actionable insights:
+
+1.  **Ingestion:** Data is collected via Services (API) or MQTT Brokers.
+2.  **Raw Storage:** All incoming data is first saved as **Parquet** files for efficient columnar storage and history preservation.
+3.  **Manual Analytics:** Data scientists/engineers can directly query Parquet files for ad-hoc analysis.
+4.  **Transformation (DBT):** We use **DBT (Data Build Tool)** to define SQL models. These models clean, deduplicate, and aggregate the raw data.
+    *   *Specific Use Case:* Creating the `Inventory` table by combining Mikrotik DHCP data with static device metadata.
+5.  **Data Warehouse (DuckDB):** The processed models are loaded into **DuckDB** for high-performance analytical querying and dashboarding.
+
+### 4. Architecture Diagrams
+
+#### High-Level Data Flow
+
+```mermaid
+flowchart LR
+    subgraph Sources
+        Mikrotik[Mikrotik Router]
+        Hik[HikVision Cameras]
+        Sensors[Shelly Sensors]
+        Ext[External APIs]
+    end
+
+    subgraph Ingestion
+        Poller[Polling Services]
+        MQTT[MQTT Broker]
+    end
+
+    subgraph Storage_Processing
+        Parquet[(Raw Parquet Files)]
+        DBT[DBT Transformation]
+        DuckDB[(DuckDB Analytics)]
+    end
+
+    Mikrotik -->|REST API| Poller
+    Ext -->|API| Poller
+    Hik -->|Events| MQTT
+    Sensors -->|Telemetry| MQTT
+
+    Poller --> Parquet
+    MQTT --> Parquet
+
+    Parquet --> DBT
+    DBT --> DuckDB
+```
+
+#### Detailed Processing Logic
+
+```mermaid
+sequenceDiagram
+    participant Dev as IoT/Net Device
+    participant Svc as Collector Service
+    participant RAW as Parquet Storage
+    participant DBT as DBT Models
+    participant WH as DuckDB
+
+    Note over Dev, Svc: Periodic Data (e.g. DHCP)
+    Svc->>Dev: Poll Data (GET /rest/...)
+    Dev-->>Svc: JSON Response
+    Svc->>RAW: Write Timestamped Parquet
+
+    Note over Dev, Svc: Event Data (e.g. Motion)
+    Dev->>Svc: Publish MQTT Message
+    Svc->>RAW: Append to Event Log (Parquet)
+
+    Note over RAW, WH: Batch Processing
+    RAW->>DBT: Read Raw Data
+    DBT->>DBT: Apply SQL Models (Clean/Join)
+    DBT->>WH: Materialize Tables/Views (e.g. Inventory)
+```
