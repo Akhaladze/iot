@@ -103,11 +103,17 @@ The system distinguishes between data that needs to be actively polled and real-
 
 We are building specialized services for data ingestion and enrichment:
 
-*   **`services/mikrotik`:** (Active) Connects to the Mikrotik REST API to fetch DHCP leases. This data is used to resolve device MAC addresses to hostnames and IP addresses, acting as the foundation for our **Device Inventory**.
+*   **`services/mikrotik`:** (Active) Connects to the Mikrotik REST API to fetch comprehensive network data:
+    *   **DHCP Leases:** Foundation for Device Inventory.
+    *   **Kid Control:** Monitoring managed devices.
+    *   **Active Services:** Auditing running router services.
+    *   **Wireless Registrations:** Tracking WiFi client signal and status.
+    *   **ARP Table:** Network layer address resolution.
+    *   **Firewall Rules:** Filter, NAT, Mangle, and Connection tracking.
+*   **`services/hikvision`:** Retrieves device configuration and captures high-resolution snapshots from security cameras.
+*   **`services/weather`:** Fetches real-time and historical weather data (temperature, humidity, precipitation) for the local area.
+*   **`services/geoip`:** Resolves IP addresses to geographical locations (City, Country) using local GeoLite2 databases.
 *   **Future Services:**
-    *   **`hik-vision`:** For retrieving camera status and snapshots.
-    *   **`weather`:** External weather API integration for correlation with internal sensors.
-    *   **`geoip`:** For analyzing external traffic sources.
     *   **`cloud-screenshot-analysis`:** Triggered by motion events; uploads camera snapshots to a cloud AI service for object detection/classification.
 
 ### 3. Analytics Workflow

@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from homebot.app import app
 from homebot.tasks import (
-    collect_mikrotik_leases,
+    collect_mikrotik_data,
     collect_shelly_metrics,
     collect_hikvision_data,
     collect_weather,
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # Also triggers data processing after sync usually, or we run processing separately.
     # Let's chain them: Sync -> Process
     def sync_and_process():
-        collect_mikrotik_leases()
+        collect_mikrotik_data()
         process_data()
 
     p_sync = multiprocessing.Process(
