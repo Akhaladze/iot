@@ -1,6 +1,7 @@
 # Smart Office / Home office structure and services
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '22px'}}}%%
 graph TD
     %% Styles
     classDef network fill:#f9f,stroke:#333,stroke-width:2px;
