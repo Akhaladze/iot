@@ -22,4 +22,4 @@ SELECT
         WHEN gen = 1 THEN (raw_status::JSON)->'tmp'->>'tC'
         WHEN gen = 2 THEN (raw_status::JSON)->'switch:0'->'temperature'->>'tC'
     END AS temp_c
-FROM main.raw_shelly_data;
+FROM {{ source('network', 'raw_shelly_data') }}

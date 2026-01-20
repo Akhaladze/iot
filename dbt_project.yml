@@ -4,9 +4,9 @@ config-version: 2
 
 profile: 'homebot_profile'
 
-model-paths: ["models"]
-seed-paths: ["seeds"]
-test-paths: ["tests"]
+model-paths: ["homebot/models"]
+seed-paths: ["homebot/seeds"]
+test-paths: ["homebot/tests"]
 target-path: "target"
 
 models:
